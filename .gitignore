@@ -1,0 +1,20 @@
+# Ambiente virtual
+venv/
+.venv/
+
+# Cache do python
+
+__pycache__/
+*.pyc
+
+# Dados gerados em runtime
+
+storage/metadados.json
+storage/logs/*
+storage/backups/*
+storage/documentos/
+
+# Exceções: mantém as pastas rastreadas mesmo vazias
+!storage/logs/.gitkeep
+!storage/backups/.gitkeep
+!storage/documentos/.gitkeep

@@ -6,3 +6,4 @@ Onde estamos?:
 
 - De início, foi realizada a estruturação das pastas, além de colocar o repositório no ar.
 - finalizei também a criação e configuração dos ambientes .venv, fastapi e uvicorn.
+- 

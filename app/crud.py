@@ -4,6 +4,7 @@ from pathlib import Path
 from models.documento import Documento, DocumentoBase
 from app.db import ler_documentos, salvar_documentos
 from app.config import carregar_config
+from typing import Optional
 
 id_documento=str(uuid.uuid4())
 
@@ -39,4 +40,15 @@ def criar_documento(conteudo: bytes, nome: str, dados: DocumentoBase) -> Documen
 
     return documento
 
+
+def buscar_documentos() -> list[Documento]:
+    return ler_documentos() 
+
+def buscar_documento_por_id(id: str) -> Optional[Documento]:
+    documento = ler_documentos()
+    for doc in documento:
+        if doc.id == id:
+            return doc
+   
+    return None
 

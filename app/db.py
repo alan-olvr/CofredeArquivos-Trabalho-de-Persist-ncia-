@@ -5,7 +5,7 @@ from models.documento import Documento
 CAMINHO_JSON=Path("storage/metadados.json")
 
 def ler_documentos() -> list[Documento]:
-    if CAMINHO_JSON != Path.exists():
+    if not CAMINHO_JSON.exists():
         return []
 
     with open(CAMINHO_JSON, "r", encoding="utf-8") as arquivo:

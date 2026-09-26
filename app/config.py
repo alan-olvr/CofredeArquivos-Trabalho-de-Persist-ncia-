@@ -4,7 +4,7 @@ import yaml
 CAMINHO_CONFIG=Path("config/config.yaml")
 
 def carregar_config() -> dict:
-    if CAMINHO_CONFIG != Path.exists():
+    if not CAMINHO_CONFIG.exists():
         print("Aviso: config/config.yaml não encontrado. Usando valores padrão.")
         return {"diretorio_armazenamento": "storage/documentos", "nivel_log": "INFO"}
 

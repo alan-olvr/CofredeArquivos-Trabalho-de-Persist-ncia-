@@ -3,24 +3,29 @@ from typing import Optional
 from pydantic import BaseModel, Field
 from datetime import date, datetime
 
+
 class Laboratorio(str, Enum):
-    ANALISES_CLINICAS="Laboratório de Análises Clínicas.",
-    HEMATOLOGIA="Laboratório de Hematologia.",
-    MICROBIOLOGIA="Laboratório de Microbiologia."
+    ANALISES_CLINICAS = "Laboratório de Análises Clínicas"
+    HEMATOLOGIA = "Laboratório de Hematologia"
+    MICROBIOLOGIA = "Laboratório de Microbiologia"
+
 
 class Equipamento(str, Enum):
-    CENTRIFUGA="Centrífuga.",
-    MICROSCOPIO_OPTICO="Microscópio Óptico.",
-    AUTOANALISADOR_BIOQUIMICO="Autoanalisador Bioquímico."
+    CENTRIFUGA = "Centrífuga"
+    MICROSCOPIO_OPTICO = "Microscópio Óptico"
+    AUTOANALISADOR_BIOQUIMICO = "Autoanalisador Bioquímico"
+    ESTUFA_CULTURA = "Estufa de Cultura"
+
 
 class Experimento(str, Enum):
-    HEMOGRAMA_COMPLETO="Hemograma completo.",
-    CULTURA_BACTERIANA="Cultura bacteriana.",
-    DOSAGEM_GLICOSE="Dosagem de glicose.",
-    URINALISE="Urinálise."
+    HEMOGRAMA_COMPLETO = "Hemograma Completo"
+    CULTURA_BACTERIANA = "Cultura Bacteriana"
+    DOSAGEM_GLICOSE = "Dosagem de Glicose"
+    URINALISE = "Urinálise"
 
-def DocumentoBase(BaseModel):
-    nome: str
+
+class DocumentoBase(BaseModel):
+    nome_original: str
     categoria: str
     descricao: Optional[str] = None
     laboratorio: Laboratorio
@@ -29,13 +34,12 @@ def DocumentoBase(BaseModel):
     responsavel: str
     data: date
 
-def Documento(DocumentoBase):
+
+class Documento(DocumentoBase):
     id: str
-    nome: str
+    nome_armazenado: str
     extensao: str
-    tipo: str
+    tipo_mime: str
     tamanho: int
     sha256: str
-    data_upload: datetime=Field(default_factory=datetime.now)
-
-
+    data_upload: datetime = Field(default_factory=datetime.now)

@@ -1,2 +1,2 @@
-diretorio_armazenado: storage/documentos
+diretorio_armazenamento: storage/documentos
 nivel_log: INFO

@@ -18,3 +18,5 @@ storage/documentos/
 !storage/logs/.gitkeep
 !storage/backups/.gitkeep
 !storage/documentos/.gitkeep
+storage/exports/*
+!storage/exports/.gitkeep

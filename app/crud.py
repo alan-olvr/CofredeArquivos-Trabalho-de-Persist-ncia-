@@ -2,10 +2,11 @@ import uuid
 import hashlib 
 import mimetypes
 from pathlib import Path
+from typing import Optional
+from app.logger import logger
 from models.documento import Documento, DocumentoBase
 from app.db import ler_documentos, salvar_documentos
 from app.config import carregar_config
-from app.logger import logger
 
 def criar_documento(conteudo: bytes, nome: str, dados: DocumentoBase) -> Documento:
     id_documento=str(uuid.uuid4())
@@ -41,4 +42,15 @@ def criar_documento(conteudo: bytes, nome: str, dados: DocumentoBase) -> Documen
 
     return documento
 
+
+def buscar_documentos() -> list[Documento]:
+    return ler_documentos() 
+
+def buscar_documentos_por_id(id: str) -> Optional[Documento]:
+    documento = ler_documentos()
+    for doc in documento:
+        if doc.id == id:
+            return doc
+   
+    return None
 

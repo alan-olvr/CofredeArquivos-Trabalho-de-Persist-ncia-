@@ -1,39 +1,27 @@
-from fastapi import FastAPI, File, UploadFile, Form
-from datetime import date
-from models.documento import Documento, DocumentoBase, Laboratorio, Equipamento, Experimento
-from app.crud import criar_documento
-from app.logger import logger
+from fastapi import FastAPI, HTTPException
+from crud import buscar_documentos, buscar_documento_por_id
+from typing import Optional
+from models.documento import Documento, DocumentoBase
+from app.db import ler_documentos, salvar_documentos
 
-app = FastAPI(title="Cofre de Arquivos Digital - Laboratório")
+app = FastAPI(title="Cofre Digital de Arquivos - Tema 14")
 
-@app.post("/documentos", response_model=Documento)
-async def upload_documento(
-    arquivo: UploadFile = File(...),
-    nome_original: str = Form(...),
-    categoria: str = Form(...),
-    descricao: str | None = Form(None),
-    laboratorio: Laboratorio = Form(...),
-    equipamento: Equipamento = Form(...),
-    experimento: Experimento = Form(...),
-    responsavel: str = Form(...),
-    data: date = Form(...), 
-):
-    conteudo=await arquivo.read()
+@app.get("/")
+def raiz():
+    return {"status": "ok", "projeto": "Cofre Digital de Arquivos"} 
 
-    dados = DocumentoBase(
-        nome_original=nome_original,
-        categoria=categoria,
-        descricao=descricao,
-        laboratorio=laboratorio,
-        equipamento=equipamento,
-        experimento=experimento,
-        responsavel=responsavel,
-        data=data,
-    )
 
-    documento=criar_documento(conteudo, arquivo.filename, dados)
-    return documento
+@app.get("/documentos")
+def consultar_documentos() -> list[Documento]:
+    return buscar_documentos() 
 
-@app.on_event("startup")
-def evento_inicializacao():
-    logger.info("Sistema iniciado")
+
+@app.get("/documentos/{id}")
+def consultar_documentos_por_id(id: str) -> Optional[Documento]:
+    doc =  buscar_documento_por_id(id)
+    if not doc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, 
+            detail="Documento não encontrado."
+        )
+    return doc 

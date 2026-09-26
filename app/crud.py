@@ -1,11 +1,11 @@
 import uuid
 import hashlib 
+import mimetypes
 from pathlib import Path
 from models.documento import Documento, DocumentoBase
 from app.db import ler_documentos, salvar_documentos
 from app.config import carregar_config
-
-id_documento=str(uuid.uuid4())
+from app.logger import logger
 
 def criar_documento(conteudo: bytes, nome: str, dados: DocumentoBase) -> Documento:
     id_documento=str(uuid.uuid4())
@@ -36,6 +36,8 @@ def criar_documento(conteudo: bytes, nome: str, dados: DocumentoBase) -> Documen
     documentos = ler_documentos()
     documentos.append(documento)
     salvar_documentos(documentos)
+
+    logger.info(f"Upload realizado: {documento.nome_original} (id={documento.id})")
 
     return documento
 

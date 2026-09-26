@@ -1,19 +1,19 @@
-import enum
+from enum import Enum
 from typing import Optional
 from pydantic import BaseModel, Field
 from datetime import date, datetime
 
-class Laboratorio(str, enum):
+class Laboratorio(str, Enum):
     ANALISES_CLINICAS="Laboratório de Análises Clínicas.",
     HEMATOLOGIA="Laboratório de Hematologia.",
     MICROBIOLOGIA="Laboratório de Microbiologia."
 
-class Equipamento(str, enum):
+class Equipamento(str, Enum):
     CENTRIFUGA="Centrífuga.",
     MICROSCOPIO_OPTICO="Microscópio Óptico.",
     AUTOANALISADOR_BIOQUIMICO="Autoanalisador Bioquímico."
 
-class Experimento(str, enum):
+class Experimento(str, Enum):
     HEMOGRAMA_COMPLETO="Hemograma completo.",
     CULTURA_BACTERIANA="Cultura bacteriana.",
     DOSAGEM_GLICOSE="Dosagem de glicose.",

@@ -48,8 +48,18 @@ async def upload_documento(
 
 
 @app.get("/documentos")
-def consultar_documentos() -> list[Documento]:
-    return buscar_documentos()
+def consultar_documentos(
+    categoria: Optional[str] = None,
+    laboratorio: Optional[Laboratorio] = None,
+    equipamento: Optional[Equipamento] = None,
+    experimento: Optional[Experimento] = None,
+) -> list[Documento]:
+    return buscar_documentos(
+        categoria=categoria,
+        laboratorio=laboratorio,
+        equipamento=equipamento,
+        experimento=experimento,
+    )
 
 
 @app.get("/documentos/{id}")

@@ -7,6 +7,7 @@ from app.logger import logger
 from models.documento import Documento, DocumentoBase
 from app.db import ler_documentos, salvar_documentos
 from app.config import carregar_config
+from models.documento import Documento, DocumentoBase, Laboratorio, Equipamento, Experimento
 
 def criar_documento(conteudo: bytes, nome: str, dados: DocumentoBase) -> Documento:
     id_documento=str(uuid.uuid4())
@@ -43,8 +44,27 @@ def criar_documento(conteudo: bytes, nome: str, dados: DocumentoBase) -> Documen
     return documento
 
 
-def buscar_documentos() -> list[Documento]:
-    return ler_documentos() 
+def buscar_documentos(
+        categoria: Optional[str] = None,
+        laboratorio: Optional[Laboratorio] = None,
+        equipamento: Optional[Equipamento] = None,
+        experimento: Optional[Experimento] = None,
+) -> list[Documento]:
+    documentos = ler_documentos()
+
+    if categoria is not None:
+        documentos = [doc for doc in documentos if doc.categoria == categoria]
+
+    if laboratorio is not None:
+        documentos = [doc for doc in documentos if doc.laboratorio == laboratorio]
+
+    if equipamento is not None:
+        documentos = [doc for doc in documentos if doc.equipamento == equipamento]
+
+    if experimento is not None:
+        documentos = [doc for doc in documentos if doc.experimento == experimento]
+
+    return documentos
 
 def buscar_documentos_por_id(id: str) -> Optional[Documento]:
     documento = ler_documentos()

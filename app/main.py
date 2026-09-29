@@ -2,8 +2,11 @@ from fastapi import FastAPI, File, UploadFile, Form, HTTPException, status
 from datetime import date
 from typing import Optional
 from models.documento import Documento, DocumentoBase, Laboratorio, Equipamento, Experimento
-from app.crud import criar_documento, buscar_documentos, buscar_documentos_por_id
+from app.crud import criar_documento, buscar_documentos, buscar_documentos_por_id, exportar_documentos_csv, criar_backup_zip
 from app.logger import logger
+from fastapi.responses import FileResponse
+
+
 
 app = FastAPI(title="Cofre Digital de Arquivos - Tema 14")
 
@@ -71,3 +74,23 @@ def consultar_documento_por_id(id: str) -> Optional[Documento]:
             detail="Documento não encontrado."
         )
     return doc
+
+
+@app.get("/exportar/csv")
+def exportar_csv():
+    caminho_arquivo = exportar_documentos_csv()
+    return FileResponse(
+        path=caminho_arquivo,
+        filename="relatorio_documentos.csv",
+        media_type="text/csv"
+    )
+
+
+@app.post("/backup")
+def realizar_backup():
+    caminho_backup = criar_backup_zip()
+    return {
+        "mensagem": "Backup realizado com sucesso!",
+        "arquivo": caminho_backup.name
+    }
+

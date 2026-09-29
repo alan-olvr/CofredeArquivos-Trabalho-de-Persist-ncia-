@@ -8,6 +8,9 @@ from models.documento import Documento, DocumentoBase
 from app.db import ler_documentos, salvar_documentos
 from app.config import carregar_config
 from models.documento import Documento, DocumentoBase, Laboratorio, Equipamento, Experimento
+import csv
+import zipfile
+from datetime import datetime
 
 def criar_documento(conteudo: bytes, nome: str, dados: DocumentoBase) -> Documento:
     id_documento=str(uuid.uuid4())
@@ -74,3 +77,49 @@ def buscar_documentos_por_id(id: str) -> Optional[Documento]:
    
     return None
 
+def exportar_documentos_csv():
+    documentos = ler_documentos()
+
+    pasta_exports = Path("storage/exports")
+    pasta_exports.mkdir(parents=True, exist_ok=True)
+    caminho_csv = pasta_exports / "documentos_exportados.csv"
+
+    with open(caminho_csv, mode="w", newline="", encoding="utf-8") as arquivo_csv:
+        campos = [
+            "id", "nome_original", "categoria", "descricao",
+            "laboratorio", "equipamento", "experimento", "responsavel",
+            "data", "tamanho", "sha256"
+        ]
+
+        escritor = csv.DictWriter(arquivo_csv, fieldnames=campos)
+        escritor.writeheader()
+
+        for doc in documentos:
+            dados_doc = doc.model_dump(mode="json")
+            linha = {campo: dados_doc.get(campo) for campo in campos}
+            escritor.writerow(linha)
+
+    logger.info("Exportação em CSV realizada com sucesso.")
+    return caminho_csv
+
+
+def criar_backup_zip()->Path:
+    pasta_storage = Path("storage").resolve()
+    pasta_backups = pasta_storage / "backups"
+    pasta_backups.mkdir(parents=True, exist_ok=True)
+
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    caminho_zip = pasta_backups / f"backup_{timestamp}.zip"
+    print(f"--> GUARDANDO BACKUP EM: {caminho_zip}")
+
+    
+
+    with zipfile.ZipFile(caminho_zip, mode="w", compression=zipfile.ZIP_DEFLATED) as zipf:
+        for arquivo in pasta_storage.rglob("*"):
+            if "backups" in arquivo.parts:
+                continue
+            if arquivo.is_file():
+                zipf.write(arquivo, arcname=arquivo.relative_to(pasta_storage))
+
+    logger.info(f"Backup criado com sucesso: {caminho_zip.name}")
+    return caminho_zip

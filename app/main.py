@@ -4,6 +4,8 @@ from typing import Optional
 from models.documento import Documento, DocumentoBase, Laboratorio, Equipamento, Experimento
 from app.crud import criar_documento, buscar_documentos, buscar_documentos_por_id, exportar_documentos_csv, criar_backup_zip
 from app.logger import logger
+from models.estatisticas import calcular_estatisticas
+from models.integridade import verificar_integridade
 from fastapi.responses import FileResponse
 
 
@@ -64,6 +66,9 @@ def consultar_documentos(
         experimento=experimento,
     )
 
+@app.get("/documentos/estatisticas")
+def consultar_estatisticas():
+    return calcular_estatisticas()
 
 @app.get("/documentos/{id}")
 def consultar_documento_por_id(id: str) -> Optional[Documento]:
@@ -74,6 +79,17 @@ def consultar_documento_por_id(id: str) -> Optional[Documento]:
             detail="Documento não encontrado."
         )
     return doc
+
+@app.get("/documentos/{id}/integridade")
+def consultar_integridade(id: str):
+    resultado = verificar_integridade(id)
+
+    if resultado is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Documento não encontrado."
+        )
+    return resultado
 
 
 @app.get("/exportar/csv")

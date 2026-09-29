@@ -4,7 +4,6 @@ import mimetypes
 from pathlib import Path
 from typing import Optional
 from app.logger import logger
-from models.documento import Documento, DocumentoBase
 from app.db import ler_documentos, salvar_documentos
 from app.config import carregar_config
 from models.documento import Documento, DocumentoBase, Laboratorio, Equipamento, Experimento
@@ -76,6 +75,8 @@ def buscar_documentos_por_id(id: str) -> Optional[Documento]:
             return doc
    
     return None
+
+
 
 def exportar_documentos_csv():
     documentos = ler_documentos()

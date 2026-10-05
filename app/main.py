@@ -6,6 +6,7 @@ from app.crud import criar_documento, buscar_documentos, buscar_documentos_por_i
 from app.logger import logger
 from models.estatisticas import calcular_estatisticas
 from models.integridade import verificar_integridade, verificar_integridade_global
+from models.backup import criar_backup_seletivo
 from fastapi.responses import FileResponse
 
 
@@ -113,3 +114,17 @@ def realizar_backup():
         "arquivo": caminho_backup.name
     }
 
+@app.post("/backup/seletivo")
+def realizar_backup_seletivo(
+    equipamento: Optional[Equipamento] = None,
+    experimento: Optional[Experimento] = None,
+):
+    try:
+        caminho_zip = criar_backup_seletivo(equipamento=equipamento, experimento=experimento)
+    except ValueError as erro:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(erro))
+
+    return {
+        "mensagem": "Backup seletivo realizado com sucesso.",
+        "arquivo": caminho_zip.name,
+    }

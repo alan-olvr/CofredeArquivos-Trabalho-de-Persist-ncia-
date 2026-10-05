@@ -5,7 +5,7 @@ from models.documento import Documento, DocumentoBase, Laboratorio, Equipamento,
 from app.crud import criar_documento, buscar_documentos, buscar_documentos_por_id, exportar_documentos_csv, criar_backup_zip
 from app.logger import logger
 from models.estatisticas import calcular_estatisticas
-from models.integridade import verificar_integridade
+from models.integridade import verificar_integridade, verificar_integridade_global
 from fastapi.responses import FileResponse
 
 
@@ -91,6 +91,9 @@ def consultar_integridade(id: str):
         )
     return resultado
 
+@app.get("/integridade")
+def consultar_integridade_global():
+    return verificar_integridade_global()
 
 @app.get("/exportar/csv")
 def exportar_csv():

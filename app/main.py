@@ -2,7 +2,14 @@ from fastapi import FastAPI, File, UploadFile, Form, HTTPException, status
 from datetime import date
 from typing import Optional
 from models.documento import Documento, DocumentoBase, Laboratorio, Equipamento, Experimento
-from app.crud import criar_documento, buscar_documentos, buscar_documentos_por_id, exportar_documentos_csv, criar_backup_zip, obter_caminho_documento
+from app.crud import (
+    criar_documento,
+    buscar_documentos,
+    buscar_documentos_por_id,
+    exportar_documentos_csv,
+    criar_backup_zip,
+    obter_caminho_documento,
+)
 from app.logger import logger
 from models.estatisticas import calcular_estatisticas
 from models.integridade import verificar_integridade, verificar_integridade_global
@@ -10,8 +17,11 @@ from models.backup import criar_backup_seletivo
 from fastapi.responses import FileResponse
 
 
-
-app = FastAPI(title="Cofre Digital de Arquivos - Tema 14")
+app = FastAPI(
+    title="Cofre Digital de Arquivos - Tema 14",
+    description="API para gerenciamento, armazenamento seguro, exportação e verificação de integridade de documentos de laboratório.",
+    version="1.0.0",
+)
 
 
 @app.on_event("startup")
@@ -19,12 +29,17 @@ def evento_inicializacao():
     logger.info("Sistema iniciado")
 
 
-@app.get("/")
+@app.get("/", tags=["Status"])
 def raiz():
+    """
+    Verifica a disponibilidade do serviço.
+
+    - **Retorna**: Um objeto indicando o status operacional do sistema.
+    """
     return {"status": "ok", "projeto": "Cofre Digital de Arquivos"}
 
 
-@app.post("/documentos", response_model=Documento)
+@app.post("/documentos", response_model=Documento, status_code=status.HTTP_201_CREATED, tags=["Documentos"])
 async def upload_documento(
     arquivo: UploadFile = File(...),
     nome_original: str = Form(...),
@@ -36,6 +51,20 @@ async def upload_documento(
     responsavel: str = Form(...),
     data: date = Form(...),
 ):
+    """
+    Realiza o upload de um novo arquivo físico e grava seus metadados.
+
+    - **arquivo**: Arquivo físico a ser enviado.
+    - **nome_original**: Nome de exibição do documento.
+    - **categoria**: Categoria do arquivo (ex: Relatório, Exame, Protocolo).
+    - **descricao**: Descrição detalhada opcional.
+    - **laboratorio**: Laboratório de origem (enum).
+    - **equipamento**: Equipamento associado (enum).
+    - **experimento**: Experimento relacionado (enum).
+    - **responsavel**: Nome do operador/responsável.
+    - **data**: Data de realização/registro do documento.
+    - **Retorna**: O objeto `Documento` cadastrado com ID, hash SHA256 e metadados.
+    """
     conteudo = await arquivo.read()
 
     dados = DocumentoBase(
@@ -53,13 +82,22 @@ async def upload_documento(
     return documento
 
 
-@app.get("/documentos")
+@app.get("/documentos", response_model=list[Documento], tags=["Documentos"])
 def consultar_documentos(
     categoria: Optional[str] = None,
     laboratorio: Optional[Laboratorio] = None,
     equipamento: Optional[Equipamento] = None,
     experimento: Optional[Experimento] = None,
 ) -> list[Documento]:
+    """
+    Consulta os documentos cadastrados utilizando filtros opcionais.
+
+    - **categoria**: Filtrar por categoria.
+    - **laboratorio**: Filtrar por laboratório de origem.
+    - **equipamento**: Filtrar por equipamento associado.
+    - **experimento**: Filtrar por experimento associado.
+    - **Retorna**: Uma lista contendo os documentos que correspondem aos critérios passados.
+    """
     return buscar_documentos(
         categoria=categoria,
         laboratorio=laboratorio,
@@ -67,12 +105,25 @@ def consultar_documentos(
         experimento=experimento,
     )
 
-@app.get("/documentos/estatisticas")
+
+@app.get("/documentos/estatisticas", tags=["Estatísticas"])
 def consultar_estatisticas():
+    """
+    Retorna métricas e estatísticas gerais do cofre digital.
+
+    - **Retorna**: Quantidade total de documentos, tamanho acumulado dos arquivos e distribuições por categoria e laboratório.
+    """
     return calcular_estatisticas()
 
-@app.get("/documentos/{id}")
+
+@app.get("/documentos/{id}", response_model=Documento, tags=["Documentos"])
 def consultar_documento_por_id(id: str) -> Optional[Documento]:
+    """
+    Busca os metadados de um documento específico pelo ID.
+
+    - **id**: UUID do documento cadastrado.
+    - **Retorna**: Os metadados detalhados do documento.
+    """
     doc = buscar_documentos_por_id(id)
     if not doc:
         raise HTTPException(
@@ -81,8 +132,15 @@ def consultar_documento_por_id(id: str) -> Optional[Documento]:
         )
     return doc
 
-@app.get("/documentos/{id}/integridade")
+
+@app.get("/documentos/{id}/integridade", tags=["Integridade"])
 def consultar_integridade(id: str):
+    """
+    Verifica a integridade do arquivo físico de um documento comparando seu hash SHA256 atual com o gravado.
+
+    - **id**: UUID do documento a ser auditado.
+    - **Retorna**: Status informando se o arquivo está íntegro, alterado ou ausente.
+    """
     resultado = verificar_integridade(id)
 
     if resultado is None:
@@ -92,12 +150,24 @@ def consultar_integridade(id: str):
         )
     return resultado
 
-@app.get("/integridade")
+
+@app.get("/integridade", tags=["Integridade"])
 def consultar_integridade_global():
+    """
+    Executa a auditoria de integridade SHA256 em todos os documentos cadastrados no cofre.
+
+    - **Retorna**: Relatório consolidado com documentos íntegros, corrompidos e ausentes.
+    """
     return verificar_integridade_global()
 
-@app.get("/exportar/csv")
+
+@app.get("/exportar/csv", tags=["Exportação e Backup"])
 def exportar_csv():
+    """
+    Gera e disponibiliza o download de uma planilha em formato CSV com todos os metadados dos documentos.
+
+    - **Retorna**: Arquivo `relatorio_documentos.csv` para download direto.
+    """
     caminho_arquivo = exportar_documentos_csv()
     return FileResponse(
         path=caminho_arquivo,
@@ -106,19 +176,32 @@ def exportar_csv():
     )
 
 
-@app.post("/backup")
+@app.post("/backup", tags=["Exportação e Backup"])
 def realizar_backup():
+    """
+    Cria um backup compactado em `.zip` contendo todos os dados e arquivos armazenados no cofre.
+
+    - **Retorna**: Mensagem de confirmação e o nome do arquivo ZIP gerado na pasta de backups.
+    """
     caminho_backup = criar_backup_zip()
     return {
         "mensagem": "Backup realizado com sucesso!",
         "arquivo": caminho_backup.name
     }
 
-@app.post("/backup/seletivo")
+
+@app.post("/backup/seletivo", tags=["Exportação e Backup"])
 def realizar_backup_seletivo(
     equipamento: Optional[Equipamento] = None,
     experimento: Optional[Experimento] = None,
 ):
+    """
+    Gera um pacote de backup em formato `.zip` filtrado por equipamento e/ou experimento.
+
+    - **equipamento**: Equipamento para filtrar os arquivos (opcional).
+    - **experimento**: Experimento para filtrar os arquivos (opcional).
+    - **Retorna**: Mensagem de sucesso e o nome do pacote de backup seletivo gerado.
+    """
     try:
         caminho_zip = criar_backup_seletivo(equipamento=equipamento, experimento=experimento)
     except ValueError as erro:
@@ -129,8 +212,15 @@ def realizar_backup_seletivo(
         "arquivo": caminho_zip.name,
     }
 
-@app.get("/documentos/{id}/download")
+
+@app.get("/documentos/{id}/download", tags=["Documentos"])
 def download_documento(id: str):
+    """
+    Realiza o download do arquivo físico associado a um documento.
+
+    - **id**: UUID do documento cadastrado.
+    - **Retorna**: O arquivo para download direto no navegador.
+    """
     resultado = obter_caminho_documento(id)
     if not resultado:
         raise HTTPException(

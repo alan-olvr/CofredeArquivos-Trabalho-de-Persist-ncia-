@@ -1,9 +1,37 @@
-DOC SOBRE O STATUS DO PROJETO.
+DOC SOBRE O STATUS DO PROJETO - COFRE DIGITAL DE ARQUIVOS (TEMA 14)
 
 =====================================================================
 
 Onde estamos?:
 
-- De início, foi realizada a estruturação das pastas, além de colocar o repositório no ar.
-- finalizei também a criação e configuração dos ambientes .venv, fastapi e uvicorn.
-- 
+- Estruturação completa do projeto, organização de pastas (app/, models/, storage/, config/) e versionamento no repositório Git.
+- Configuração do ambiente virtual (.venv), FastAPI, Uvicorn, Pydantic e dependências.
+- Configuração do ficheiro de definições `config/config.yaml` e sistema de logs automatizado em `storage/logs/app.log`.
+- Persistência de metadados em formato JSON em `storage/metadados.json`.
+
+Etapas Concluídas:
+
+1. CRUD e Armazenamento Digital:
+   - Upload de ficheiros com cálculo de hash SHA256, geração de UUID único e armazenamento dos ficheiros físicos.
+   - Listagem e consulta de documentos com suporte a filtros combinados (categoria, laboratório, equipamento e experimento).
+   - Consulta detalhada por ID de documento.
+   - Download direto do ficheiro físico associado ao documento (`GET /documentos/{id}/download`).
+
+2. Integridade e Auditoria de Dados:
+   - Verificação individual de integridade via hash SHA256 (`GET /documentos/{id}/integridade`).
+   - Auditoria global de integridade de todo o acervo (`GET /integridade`), identificando ficheiros íntegros, alterados ou ausentes.
+
+3. Estatísticas e Métricas:
+   - Rota de estatísticas gerais (`GET /documentos/estatisticas`) com contagem total de documentos, consumo de armazenamento em bytes e distribuição por extensão, categoria, laboratório e equipamento.
+
+4. Exportação e Backups:
+   - Exportação completa da base de metadados em formato CSV (`GET /exportar/csv`) guardada em `storage/exports/`.
+   - Gerador de Backup Total compactado em formato `.zip` (`POST /backup`) na pasta `storage/backups/`.
+   - Gerador de Backup Seletivo (`POST /backup/seletivo`) filtrado por equipamento ou experimento.
+
+5. Qualidade, Documentação e Swagger:
+   - Documentação interativa via Swagger UI (`/docs`) com tags organizadas, tipagem rigorosa Pydantic e docstrings explicativas em todas as rotas da API.
+   - Ficheiro `README.md` completo com instruções de instalação, execução e detalhes da arquitetura.
+
+Status Atual:
+- Projeto 100% funcional, testado e concluído.

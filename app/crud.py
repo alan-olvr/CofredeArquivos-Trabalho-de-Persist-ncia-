@@ -124,3 +124,17 @@ def criar_backup_zip()->Path:
 
     logger.info(f"Backup criado com sucesso: {caminho_zip.name}")
     return caminho_zip
+
+def obter_caminho_documento(id: str) -> tuple[Path, Documento] | None:
+    doc = buscar_documentos_por_id(id)
+    if not doc:
+        return None
+
+    config = carregar_config()
+    diretorio = Path(config.get("diretorio_armazenamento", "storage/documentos"))
+    caminho_arquivo = diretorio / doc.nome_armazenado
+
+    if not caminho_arquivo.exists():
+        return None
+
+    return caminho_arquivo, doc

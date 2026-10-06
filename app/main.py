@@ -2,7 +2,7 @@ from fastapi import FastAPI, File, UploadFile, Form, HTTPException, status
 from datetime import date
 from typing import Optional
 from models.documento import Documento, DocumentoBase, Laboratorio, Equipamento, Experimento
-from app.crud import criar_documento, buscar_documentos, buscar_documentos_por_id, exportar_documentos_csv, criar_backup_zip
+from app.crud import criar_documento, buscar_documentos, buscar_documentos_por_id, exportar_documentos_csv, criar_backup_zip, obter_caminho_documento
 from app.logger import logger
 from models.estatisticas import calcular_estatisticas
 from models.integridade import verificar_integridade, verificar_integridade_global
@@ -128,3 +128,20 @@ def realizar_backup_seletivo(
         "mensagem": "Backup seletivo realizado com sucesso.",
         "arquivo": caminho_zip.name,
     }
+
+@app.get("/documentos/{id}/download")
+def download_documento(id: str):
+    resultado = obter_caminho_documento(id)
+    if not resultado:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Documento ou arquivo físico não encontrado."
+        )
+
+    caminho_arquivo, doc = resultado
+
+    return FileResponse(
+        path=caminho_arquivo,
+        filename=doc.nome_original,
+        media_type=doc.tipo_mime or "application/octet-stream"
+    )

@@ -1,11 +1,14 @@
-from fastapi import FastAPI, File, UploadFile, Form, HTTPException, status
+from fastapi import FastAPI, File, UploadFile, Form, HTTPException, status, Query
 from datetime import date
 from typing import Optional
-from models.documento import Documento, DocumentoBase, Laboratorio, Equipamento, Experimento
+from models.documento import Documento, DocumentoBase, DocumentoUpdate, Laboratorio, Equipamento, Experimento
 from app.crud import (
     criar_documento,
     buscar_documentos,
     buscar_documentos_por_id,
+    atualizar_documento,
+    apagar_documento,
+    listar_backups,
     exportar_documentos_csv,
     criar_backup_zip,
     obter_caminho_documento,
@@ -16,18 +19,21 @@ from models.integridade import verificar_integridade, verificar_integridade_glob
 from models.backup import criar_backup_seletivo
 from fastapi.responses import FileResponse
 
-
 app = FastAPI(
     title="Cofre Digital de Arquivos - Tema 14",
     description="API para gerenciamento, armazenamento seguro, exportação e verificação de integridade de documentos de laboratório.",
     version="1.0.0",
 )
 
+def erro_404(recurso: str):
+    raise HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail=f"{recurso} não encontrado.",
+    )
 
 @app.on_event("startup")
 def evento_inicializacao():
     logger.info("Sistema iniciado")
-
 
 @app.get("/", tags=["Status"])
 def raiz():
@@ -84,10 +90,10 @@ async def upload_documento(
 
 @app.get("/documentos", response_model=list[Documento], tags=["Documentos"])
 def consultar_documentos(
-    categoria: Optional[str] = None,
-    laboratorio: Optional[Laboratorio] = None,
-    equipamento: Optional[Equipamento] = None,
-    experimento: Optional[Experimento] = None,
+    categoria: Optional[str] = Query(default=None, description="Filtrar por categoria"),
+    laboratorio: Optional[Laboratorio] = Query(default=None, description="Filtrar por laboratório de origem"),
+    equipamento: Optional[Equipamento] = Query(default=None, description="Filtrar por equipamento associado"),
+    experimento: Optional[Experimento] = Query(default=None, description="Filtrar por experimento associado"),
 ) -> list[Documento]:
     """
     Consulta os documentos cadastrados utilizando filtros opcionais.
@@ -132,6 +138,34 @@ def consultar_documento_por_id(id: str) -> Optional[Documento]:
         )
     return doc
 
+@app.put("/documentos/{id}", response_model=Documento, tags=["Documentos"])
+def atualizar_metadados(id: str, dados: DocumentoUpdate):
+    """
+    Atualiza os metadados de um documento. O arquivo físico não é alterado.
+    - **id**: UUID do documento.
+    - **Retorna**: O documento com os metadados atualizados.
+    """
+    documento = atualizar_documento(id, dados)
+    if documento is None:
+        erro_404("Documento")
+    return documento
+
+@app.delete("/documentos/{id}", status_code=status.HTTP_204_NO_CONTENT, tags=["Documentos"])
+def remover_documento(id: str):
+    """
+    Remove o registro do JSON e o arquivo físico do documento.
+    - **id**: UUID do documento.
+    """
+    if not apagar_documento(id):
+        erro_404("Documento")
+
+@app.get("/backups", tags=["Exportação e Backup"])
+def consultar_backups():
+    """
+    Lista os backups `.zip` gerados na pasta de backups.
+    - **Retorna**: Nome, tamanho e data de criação de cada backup.
+    """
+    return listar_backups()
 
 @app.get("/documentos/{id}/integridade", tags=["Integridade"])
 def consultar_integridade(id: str):
@@ -235,3 +269,4 @@ def download_documento(id: str):
         filename=doc.nome_original,
         media_type=doc.tipo_mime or "application/octet-stream"
     )
+

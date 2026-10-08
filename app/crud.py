@@ -6,7 +6,7 @@ from typing import Optional
 from app.logger import logger
 from app.db import ler_documentos, salvar_documentos
 from app.config import carregar_config
-from models.documento import Documento, DocumentoBase, Laboratorio, Equipamento, Experimento
+from models.documento import Documento, DocumentoBase, DocumentoUpdate, Laboratorio, Equipamento, Experimento
 import csv
 import zipfile
 from datetime import datetime
@@ -18,6 +18,7 @@ def criar_documento(conteudo: bytes, nome: str, dados: DocumentoBase) -> Documen
     nome_armazenado=f"{id_documento}{extensao}"
     sha256=hashlib.sha256(conteudo).hexdigest()
     tipo, _ = mimetypes.guess_type(nome)
+    tipo = tipo or "application/octet-stream"
     tamanho=len(conteudo)
 
     documento = Documento(
@@ -76,8 +77,6 @@ def buscar_documentos_por_id(id: str) -> Optional[Documento]:
    
     return None
 
-
-
 def exportar_documentos_csv():
     documentos = ler_documentos()
 
@@ -113,8 +112,6 @@ def criar_backup_zip()->Path:
     caminho_zip = pasta_backups / f"backup_{timestamp}.zip"
     print(f"--> GUARDANDO BACKUP EM: {caminho_zip}")
 
-    
-
     with zipfile.ZipFile(caminho_zip, mode="w", compression=zipfile.ZIP_DEFLATED) as zipf:
         for arquivo in pasta_storage.rglob("*"):
             if "backups" in arquivo.parts:
@@ -138,3 +135,44 @@ def obter_caminho_documento(id: str) -> tuple[Path, Documento] | None:
         return None
 
     return caminho_arquivo, doc
+
+def atualizar_documento(id: str, dados: DocumentoUpdate) -> Optional[Documento]:
+    documentos = ler_documentos()
+    for i, doc in enumerate(documentos):
+        if doc.id == id:
+            campos = dados.model_dump(exclude_unset=True, exclude_none=True)
+            atualizado = doc.model_copy(update=campos)
+            documentos[i] = Documento.model_validate(atualizado.model_dump())
+            salvar_documentos(documentos)
+            logger.info(f"Documento atualizado: id={id} campos={list(campos)}")
+            return documentos[i]
+    return None
+
+def apagar_documento(id: str) -> bool:
+    documentos = ler_documentos()
+    alvo = next((doc for doc in documentos if doc.id == id), None)
+    if alvo is None:
+        return False
+
+    config = carregar_config()
+    diretorio = Path(config.get("diretorio_armazenamento", "storage/documentos"))
+    caminho_arquivo = diretorio / alvo.nome_armazenado
+    if caminho_arquivo.exists():
+        caminho_arquivo.unlink()
+
+    salvar_documentos([doc for doc in documentos if doc.id != id])
+    logger.info(f"Documento removido: {alvo.nome_original} (id={id})")
+    return True
+
+def listar_backups() -> list[dict]:
+    pasta_backups = Path("storage/backups")
+    if not pasta_backups.exists():
+        return []
+    return [
+        {
+            "arquivo": zip_path.name,
+            "tamanho_bytes": zip_path.stat().st_size,
+            "criado_em": datetime.fromtimestamp(zip_path.stat().st_mtime).isoformat(),
+        }
+        for zip_path in sorted(pasta_backups.glob("*.zip"), reverse=True)
+    ]

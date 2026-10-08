@@ -30,9 +30,19 @@ class DocumentoBase(BaseModel):
     descricao: Optional[str] = None
     laboratorio: Laboratorio
     equipamento: Equipamento
-    experimento: Experimento
+    experimento: Experimento    
     responsavel: str
     data: date
+
+class DocumentoUpdate(BaseModel):
+    nome_original: Optional[str] = Field(default=None, min_length=3, max_length=120)
+    categoria: Optional[str] = Field(default=None, min_length=3, max_length=60)
+    descricao: Optional[str] = Field(default=None, max_length=300)
+    laboratorio: Optional[Laboratorio] = None
+    equipamento: Optional[Equipamento] = None
+    experimento: Optional[Experimento] = None
+    responsavel: Optional[str] = Field(default=None, min_length=2, max_length=80)
+    data: Optional[date] = None
 
 
 class Documento(DocumentoBase):

@@ -3,20 +3,18 @@ venv/
 .venv/
 
 # Cache do python
-
 __pycache__/
 *.pyc
 
 # Dados gerados em runtime
-
 storage/metadados.json
 storage/logs/*
 storage/backups/*
-storage/documentos/
+storage/documentos/*
+storage/exports/*
 
 # Exceções: mantém as pastas rastreadas mesmo vazias
 !storage/logs/.gitkeep
 !storage/backups/.gitkeep
 !storage/documentos/.gitkeep
-storage/exports/*
 !storage/exports/.gitkeep

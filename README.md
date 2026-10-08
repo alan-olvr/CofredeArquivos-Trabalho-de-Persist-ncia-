@@ -6,8 +6,8 @@ API REST em **FastAPI** para armazenar, consultar, verificar a integridade, expo
 
 ## Integrantes
 
-- <José Alan de Oliveira Silva>
-- <Daniel Fernandes Ferreira>
+- José Alan de Oliveira Silva
+- Daniel Fernandes Ferreira
 
 ## Tecnologias
 

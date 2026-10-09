@@ -11,6 +11,10 @@ import csv
 import zipfile
 from datetime import datetime
 
+class DocumentoDuplicadoError(Exception):
+    """Já existe um documento com o mesmo SHA-256."""
+
+
 def criar_documento(conteudo: bytes, nome: str, dados: DocumentoBase) -> Documento:
     id_documento=str(uuid.uuid4())
     extensao=Path(nome).suffix
@@ -20,6 +24,11 @@ def criar_documento(conteudo: bytes, nome: str, dados: DocumentoBase) -> Documen
     tipo, _ = mimetypes.guess_type(nome)
     tipo = tipo or "application/octet-stream"
     tamanho=len(conteudo)
+
+    existente = next((doc for doc in ler_documentos() if doc.sha256 == sha256), None)
+    if existente:
+        logger.warning(f"Upload duplicado recusado: {nome} (igual a id={existente.id})")
+        raise DocumentoDuplicadoError(existente.id)
 
     documento = Documento(
         **dados.model_dump(),

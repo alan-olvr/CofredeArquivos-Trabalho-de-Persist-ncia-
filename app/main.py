@@ -3,6 +3,7 @@ from datetime import date
 from typing import Optional
 from models.documento import Documento, DocumentoBase, DocumentoUpdate, Laboratorio, Equipamento, Experimento
 from app.crud import (
+    DocumentoDuplicadoError,
     criar_documento,
     buscar_documentos,
     buscar_documentos_por_id,
@@ -84,7 +85,13 @@ async def upload_documento(
         data=data,
     )
 
-    documento = criar_documento(conteudo, arquivo.filename, dados)
+    try:
+        documento = criar_documento(conteudo, arquivo.filename, dados)
+    except DocumentoDuplicadoError as erro:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Já existe um documento com o mesmo conteúdo (id={erro}).",
+        )
     return documento
 
 
@@ -209,7 +216,6 @@ def exportar_csv():
         media_type="text/csv"
     )
 
-
 @app.post("/backup", tags=["Exportação e Backup"])
 def realizar_backup():
     """
@@ -222,7 +228,6 @@ def realizar_backup():
         "mensagem": "Backup realizado com sucesso!",
         "arquivo": caminho_backup.name
     }
-
 
 @app.post("/backup/seletivo", tags=["Exportação e Backup"])
 def realizar_backup_seletivo(

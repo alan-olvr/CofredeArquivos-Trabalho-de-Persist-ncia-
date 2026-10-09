@@ -6,6 +6,7 @@ from typing import Optional
 from models.documento import Equipamento, Experimento
 from app.crud import buscar_documentos
 from app.config import carregar_config
+from app.logger import logger
 
 def criar_backup_seletivo(
     equipamento: Optional[Equipamento] = None,
@@ -43,6 +44,8 @@ def criar_backup_seletivo(
             caminho_arquivo_original = diretorio_arquivos / doc.nome_armazenado
             if caminho_arquivo_original.exists():
                 zipf.write(caminho_arquivo_original, arcname=doc.nome_armazenado)
+
+    logger.info(f"Backup seletivo criado: {caminho_zip.name} ({len(documentos)} documentos)")
 
     return caminho_zip
 

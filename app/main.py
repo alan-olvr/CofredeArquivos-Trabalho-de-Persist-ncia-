@@ -1,4 +1,5 @@
-from fastapi import FastAPI, File, UploadFile, Form, HTTPException, status, Query
+from fastapi import FastAPI, File, UploadFile, Form, HTTPException, status, Query, Request
+from fastapi.responses import FileResponse, JSONResponse
 from datetime import date
 from typing import Optional
 from models.documento import Documento, DocumentoBase, DocumentoUpdate, Laboratorio, Equipamento, Experimento
@@ -19,6 +20,7 @@ from models.estatisticas import calcular_estatisticas
 from models.integridade import verificar_integridade, verificar_integridade_global
 from models.backup import criar_backup_seletivo
 from fastapi.responses import FileResponse
+from app.db import MetadadosInvalidosError
 
 app = FastAPI(
     title="Cofre Digital de Arquivos - Tema 14",
@@ -27,9 +29,25 @@ app = FastAPI(
 )
 
 def erro_404(recurso: str):
+    logger.warning(f"{recurso} não encontrado")
     raise HTTPException(
         status_code=status.HTTP_404_NOT_FOUND,
         detail=f"{recurso} não encontrado.",
+    )
+
+@app.exception_handler(MetadadosInvalidosError)
+async def tratar_metadados_invalidos(request: Request, erro: MetadadosInvalidosError):
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content={"detail": "Arquivo de metadados inválido ou corrompido."},
+    )
+
+@app.exception_handler(OSError)
+async def tratar_erro_io(request: Request, erro: OSError):
+    logger.error(f"Erro de leitura/escrita: {erro}")
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content={"detail": "Erro de leitura ou escrita no armazenamento."},
     )
 
 @app.on_event("startup")
@@ -139,10 +157,8 @@ def consultar_documento_por_id(id: str) -> Optional[Documento]:
     """
     doc = buscar_documentos_por_id(id)
     if not doc:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Documento não encontrado."
-        )
+        erro_404("Documento")
+    logger.info(f"Consulta: id={id}")
     return doc
 
 @app.put("/documentos/{id}", response_model=Documento, tags=["Documentos"])
@@ -185,10 +201,9 @@ def consultar_integridade(id: str):
     resultado = verificar_integridade(id)
 
     if resultado is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Documento não encontrado."
-        )
+        erro_404("Documento")
+
+    logger.info(f"Integridade verificada: id={id} integro={resultado.get('integro')}")
     return resultado
 
 
@@ -199,7 +214,9 @@ def consultar_integridade_global():
 
     - **Retorna**: Relatório consolidado com documentos íntegros, corrompidos e ausentes.
     """
-    return verificar_integridade_global()
+    resultado = verificar_integridade_global()
+    logger.info(f"Integridade global: {resultado}")
+    return resultado
 
 
 @app.get("/exportar/csv", tags=["Exportação e Backup"])
@@ -262,12 +279,10 @@ def download_documento(id: str):
     """
     resultado = obter_caminho_documento(id)
     if not resultado:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Documento ou arquivo físico não encontrado."
-        )
+        erro_404("Documento ou arquivo físico")
 
     caminho_arquivo, doc = resultado
+    logger.info(f"Download: {doc.nome_original} (id={id})")
 
     return FileResponse(
         path=caminho_arquivo,
